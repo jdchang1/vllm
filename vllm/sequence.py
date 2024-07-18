@@ -458,6 +458,9 @@ class SequenceGroup:
         self.encoder_seq = encoder_seq
         self.trace_headers = trace_headers
 
+        # Jonathan: RM score
+        self.rm_score = None
+
     @property
     def prompt(self) -> Optional[str]:
         # All sequences in the group should have the same prompt.
@@ -684,6 +687,9 @@ class SequenceGroupMetadata:
         self.cross_block_table = cross_block_table
         self._token_chunk_size = token_chunk_size
         self.do_sample = do_sample
+        
+        # Jonathan: RM score
+        self.rm_score = None
 
         # The number of speculative tokens adopted in this request.
         # None means specuative decoding is not used.
@@ -764,6 +770,30 @@ class SequenceGroupOutput(ABC):
     def __eq__(self, other: object) -> bool:
         pass
 
+class RmSequenceGroupOutput(SequenceGroupOutput):
+    """The model output associated with a completion sequence group."""
+
+    def __init__(
+        self,
+        samples: List[SequenceOutput],
+        prompt_logprobs: Optional[PromptLogprobs],
+    ) -> None:
+        self.samples = samples
+        # Prompt logprob for each prompt query token.
+        self.prompt_logprobs = prompt_logprobs
+        
+        # Jonathan: RM score
+        self.rm_score = None
+
+    def __repr__(self) -> str:
+        return (f"RmSequenceGroupOutput(samples={self.samples}, "
+                f"prompt_logprobs={self.prompt_logprobs})")
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RmSequenceGroupOutput):
+            raise NotImplementedError()
+        return (self.samples == other.samples
+                and self.prompt_logprobs == other.prompt_logprobs)
 
 class CompletionSequenceGroupOutput(SequenceGroupOutput):
     """The model output associated with a completion sequence group."""
